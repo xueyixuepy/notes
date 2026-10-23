@@ -6,4 +6,5 @@
 - unordered_set<int> s
 ### 二.操作
 - s.insert();
-- s.find();
+- s.find(); //返回迭代器，不能用来判断是否找到某元素
+- s.count()：返回 0 或 1（set元素唯一）
