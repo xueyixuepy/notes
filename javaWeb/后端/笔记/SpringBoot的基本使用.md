@@ -149,5 +149,101 @@ spring-boot-starter-test：包含了单元测试所需要的常见依赖。
   在文件夹下新建目录impl，存放具体实现
 - 如何使用上一层的方法
   在类里定义好接口和实现,然后在方法里调用上一层的方法
-## 3.示例
+### 3.示例
 见springbootweb2项目
+## 分层解耦与IOC、DI
+### 1.分层解耦
+- 意义
+  在原来的三层架构实现方法中，调用下层方法时，是使用new来显式生成一个实例对象
+  如果需要使用另一个方法，那么new的类名也得改变
+  也就是说，修改了下层，上层代码也要改变
+  于是使用IOC容器，让他来管理并提供需要的对象
+- 概念
+  控制反转: Inversion Of Control,简称**IOC**。对象的创建控制权由程序自身转移到外部(容器) ,这种思想称为控制反转。
+  依赖注入: Dependency Injection,简称**DI**。容器为应用程序提供运行时,所依赖的资源,称之为依赖注入。
+  Bean对象: IOC容器中创建、管理的对象,称之为Bean。
+### 2.实现方法
+- 面向注解
+  需要被管理的类，上面加上注解@Component
+  需要使用到这个类对象的地方，直接定义接口，然后在它上面加上注解@Autowired
+- 三层对应的注解
+  ![alt text](image-13.png)
+  对于那三层，可以用衍生的，也可以用基线注解
+  >其实Controller层不用加注解,因为已经有了RestController注解,它包含了Controller
+### 3.生效范围
+- 注解生效需要被扫描
+- 在类前加上注解@ComponentScan就会扫描类所在包及其子包了
+- 启动类的声明注解@SpringBootApplication里就包含了该注解，所以默认扫描范围就是启动类所在包及其子包
+### 4.注入方法
+- 属性注入
+  ```java
+  @RestController
+  public class UserController(){
+    @AutoWired
+    private UserService userService;
+    //....
+  }
+  ```
+- 构造函数注入
+  ```java
+  @RestController
+  public class UserController(){
+    private final UserService userService;
+    @AutoWired
+    public UserController(UserService userService){
+      this.userService = userService;
+    }
+    //....
+  }
+  ```
+  这里的final可以不要,它的作用是修饰成员变量时，表示:
+    - 变量只能在「声明时直接赋值」或「构造方法执行过程中赋值」；
+    - 对象创建完成后，这个变量就不能再指向其他对象，也不能被重新赋值。
+  因此,另外两种方法不能使用final,因为属性注入和set方法都是在对象创建完成后再执行的
+  >对于该方法,如果当前类中只存在一个构造函数,@AutoWired可以省略
+- set方法注入
+  ```java
+  @RestController
+  public class UserController(){
+    private UserService userService;
+    @AutoWired
+    public setUserController(UserService userService){
+      this.userService = userService;
+    }
+    //....
+  }
+  ```
+  会自动调用该方法
+### 5.具体注入哪个类
+- 当接口有多个实现类时,架构会不知道用哪个
+- @Primary
+  - 给bean设置最优先
+  - 示例
+    ```java
+    @Primary
+    @Service
+    public class UserServiceImpl implement UserService{
+      ...
+    }
+    ```
+
+- @Qualifier("")
+  - 显式指定使用的bean名
+  - 示例
+    ```java
+    ...
+    @AutoWired
+    @Qualifier("userServiceImpl")
+    private UserService userService;
+    ...
+    ```
+- @Resource(name = "")
+  - 显式指定使用的bean名,可以不用@AutoWired注解了
+  - 示例
+    ```java
+    ...
+    @Resource(name = "userServiceImpl")
+    private UserService userService;
+    ...
+    ```
+>bean名字不取的话默认就是类名首字母小写
